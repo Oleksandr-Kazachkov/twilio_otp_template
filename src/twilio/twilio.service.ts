@@ -1,24 +1,41 @@
+
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Twilio } from 'twilio';
 import { UsersService } from 'src/user/user.service';
-
+import VerificationChecksDto from './dto/verification.check.dto';
+ 
 @Injectable()
 export default class SmsService {
   private twilioClient: Twilio;
+ 
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly usersService: UsersService
+  ) {
+   }
+ 
+  async initiatePhoneNumberVerification(phoneNumber: string) {
+    const accountSid = this.configService.get('TWILIO_ACCOUNT_SID');
+    const authToken = this.configService.get('TWILIO_AUTH_TOKEN');
+    const twilioClient = new Twilio(accountSid, authToken);
 
-  constructor(private readonly usersService: UsersService) {
-    const accountSid = 'AC32d171f27299441e12f1002e707d589a';
-    const authToken = '53db5a2c93f6b204af45c1373e99adea';
-
-    this.twilioClient = new Twilio(accountSid, authToken);
-
+    const serviceSid = this.configService.get('TWILIO_VERIFICATION_SERVICE_SID');
+ 
+    return await twilioClient.verify.v2.services(serviceSid)
+      .verifications
+      .create({ to: phoneNumber, channel: 'sms'})
   }
 
-  initiatePhoneNumberVerification(phoneNumber: any) {
-    const serviceSid = 'MG1b9e3e96b483cc7138cf339673102464';
+  async checkVerificationCode(verificationChecksDto: VerificationChecksDto) {
+    const accountSid = this.configService.get('TWILIO_ACCOUNT_SID');
+    const authToken = this.configService.get('TWILIO_AUTH_TOKEN');
+    const twilioClient = new Twilio(accountSid, authToken);
 
-    return this.twilioClient.verify
-      .v2.services(serviceSid)
-      .verifications.create({ to: phoneNumber.phoneNumber, channel: 'sms'  });
+    const serviceSid = this.configService.get('TWILIO_VERIFICATION_SERVICE_SID');
+ 
+    return await twilioClient.verify.v2.services(serviceSid)
+      .verificationChecks
+      .create({ to: verificationChecksDto.phoneNumber, code: verificationChecksDto.code })
   }
 }

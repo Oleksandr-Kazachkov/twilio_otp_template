@@ -5,16 +5,23 @@ import {
   Body,
 } from '@nestjs/common';
 import TwilioService from './twilio.service';
+import VerificationChecksDto from './dto/verification.check.dto';
 
-@Controller('sms')
+@Controller('/sms')
 export default class SmsController {
   constructor(private readonly twilioService: TwilioService) {}
 
-  @Post('check-verification-code')
-  async checkVerificationCode(@Body() phoneNumber: string) {
+  @Post('/send-verification-code')
+  async sendVerificationCode(@Body() phoneNumber: any) {
     if (!phoneNumber) {
       throw new BadRequestException('Phone number already confirmed');
     }
-    await this.twilioService.initiatePhoneNumberVerification(phoneNumber);
+    return await this.twilioService.initiatePhoneNumberVerification(phoneNumber.phoneNumber);
+  }
+
+  @Post('/check-verification-code')
+  async checkVerificationCode(@Body() verificationChecksDto: VerificationChecksDto) {
+
+    return await this.twilioService.checkVerificationCode(verificationChecksDto);
   }
 }
